@@ -1,6 +1,13 @@
 import React from 'react';
 import Youtube from 'react-youtube'
 import './App.css';
+import data from './database/data';
+
+const url = require('url');
+const currentURL = new URL(window.location.href);
+const userName = currentURL.searchParams.get('user');
+
+const users = data.users;
 
 class WatchPanel extends React.Component {
     constructor(props) {
@@ -21,10 +28,12 @@ class WatchPanel extends React.Component {
             return <p>Please choose a video</p>
         }
         return (
-            <Youtube
-                videoId={this.state.theId}
-                opts={opts}
-            />
+            <div className="videoPanel">
+                <Youtube
+                    videoId={this.state.theId}
+                    opts={opts}
+                />
+            </div>
         );
     }
 
@@ -55,7 +64,7 @@ class VideoList extends React.Component {
             table.push(
                 <Item
                     key={i}
-                    name={this.props.itemList[i].name}
+                    name={this.props.itemList[i].title}
                     onClick={() => this.props.onClick(i)}
                 />
             );
@@ -66,7 +75,7 @@ class VideoList extends React.Component {
 
     render() {
         return (
-            <div>
+            <div className="listPanel">
                 {this.createItemList()}
             </div>
         )
@@ -77,39 +86,48 @@ class Frame extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            itemList: [],
-            current: new Video({name: 'Lolo au cambodge', videoId: 'NTrqvDkA5NA'}),
+            itemList: this.getUser().videos,
+            current: this.getUser().videos[0],
         };
-        this.fillItemList();
-    }
-
-    fillItemList() {
-        this.state.itemList.push(new Video({name: 'Lolo au cambodge', videoId: 'NTrqvDkA5NA'}));
-        this.state.itemList.push(new Video({name: 'Villebrequin Initial D', videoId: 'UrTIU7jH0zE'}));
     }
 
     handleClick(i) {
-        console.log("coucou c'est moi : " + this.state.itemList[i].videoId);
         this.setState({
-            current: this.state.itemList[i].videoId
+            current: this.state.itemList[i].id
         });
     }
 
     render() {
 
         return (
-            <div>
+            <div className="mainPanel">
                 <VideoList
                     itemList={this.state.itemList}
                     onClick={(i) => this.handleClick(i)}
                 />
                 <WatchPanel
-                    youtubeId={this.state.current.videoId}
+                    youtubeId={this.state.current.id}
                 />
             </div>
         );
     }
 
+    getUser() {
+        let found = false;
+        let i = 0;
+        let currentUser = users[0];
+        while (currentUser.name !== userName && i < users.length - 1) {
+            i++;
+            currentUser = users[i];
+            if (currentUser.name === userName)
+                found = !found;
+        }
+        console.log(currentUser.name);
+        if (found)
+            return currentUser;
+        else
+            return null;
+    }
 
 }
 
