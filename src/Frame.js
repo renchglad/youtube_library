@@ -2,8 +2,8 @@ import React from 'react';
 import Youtube from 'react-youtube'
 import './App.css';
 import data from './database/data';
+import youtube from './api_youtube'
 
-const url = require('url');
 const currentURL = new URL(window.location.href);
 const userName = currentURL.searchParams.get('user');
 
@@ -16,6 +16,7 @@ class WatchPanel extends React.Component {
             theId: props.youtubeId
         }
     }
+
     render() {
         const opts = {
             height: '390',
@@ -39,13 +40,6 @@ class WatchPanel extends React.Component {
 
 }
 
-class Video {
-    constructor(props) {
-        this.name = props.name;
-        this.videoId = props.videoId;
-    }
-}
-
 function Item(props) {
     return (
         <button onClick={props.onClick}>
@@ -57,8 +51,6 @@ function Item(props) {
 class VideoList extends React.Component {
 
     createItemList() {
-
-
         let table = [];
         for (let i = 0; i < this.props.itemList.length; i++) {
             table.push(
@@ -85,10 +77,13 @@ class VideoList extends React.Component {
 class Frame extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            itemList: this.getUser().videos,
-            current: this.getUser().videos[0],
-        };
+        if (this.getUser() !== null) {
+            this.state = {
+                itemList: this.getUser().videos,
+                current: this.getUser().videos[0],
+            };
+        }
+
     }
 
     handleClick(i) {
@@ -98,18 +93,38 @@ class Frame extends React.Component {
     }
 
     render() {
+        if (this.getUser() === null) {
+            return (
+                <h1>Please specify an user in the url</h1>
+            )
+        } else {
+            return (
+                <div className="mainPanel">
+                    <VideoList
+                        itemList={this.state.itemList}
+                        onClick={(i) => this.handleClick(i)}
+                    />
+                    <button onClick={() => this.newVideo()}>+</button>
+                    <WatchPanel
+                        youtubeId={this.state.current.id}
+                    />
+                </div>
+            );
+        }
 
-        return (
-            <div className="mainPanel">
-                <VideoList
-                    itemList={this.state.itemList}
-                    onClick={(i) => this.handleClick(i)}
-                />
-                <WatchPanel
-                    youtubeId={this.state.current.id}
-                />
-            </div>
-        );
+    }
+
+    newVideo() {
+        let vids = this.getUser().videos;
+        vids.push({"title" : "Sushi", "id": "J9kJDTXDgPE"})
+        this.setState({
+            itemList: vids
+        });
+        console.log(youtube.get('/search/', {
+            params: {
+                q: "sushi",
+            },
+        }))
     }
 
     getUser() {
@@ -122,7 +137,6 @@ class Frame extends React.Component {
             if (currentUser.name === userName)
                 found = !found;
         }
-        console.log(currentUser.name);
         if (found)
             return currentUser;
         else
